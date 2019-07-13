@@ -22,13 +22,6 @@ public class GravitySector{
     }
 
     /*
-    Returns a combined gravity vector of this sector.
-    */
-    public Vector3 GetGravity(GravityField.GravityType gravityType){
-        return new Vector3();
-    }
-
-    /*
     Combines gravity vectors into one.
     */
     public void CombineGravityVectors(){
@@ -45,5 +38,21 @@ public class GravitySector{
         gravityVectorAvg = gravityVectorSum/gravityVectors.Count; // set avg
 
         Debug.DrawLine(position, position+gravityVectorSum, Color.red, 1000, false); // debug, delete later
+    }
+
+    /*
+    Returns a combined gravity vector of this sector.
+    */
+    public Vector3 GetGravity(GravityField.GravityType gravityType){
+        switch(gravityType){
+            case GravityField.GravityType.Sum:
+                return gravityVectorSum;
+            case GravityField.GravityType.Max:
+                return gravityVectorMax;
+            case GravityField.GravityType.Average:
+                return gravityVectorAvg;
+            default:
+                return Vector3.zero;
+        }
     }
 }

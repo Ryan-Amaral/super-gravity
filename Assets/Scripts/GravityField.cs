@@ -24,10 +24,14 @@ public class GravityField : MonoBehaviour{
 
     Vector3 fieldCenter; // center of field to draw to if OOB
 
+    public static GravityField instance;
+
     /*
     Create the gravity sectors with just positions for now.
     */
     void Start(){
+        instance = this;
+
         // amount of sectors to place along each axis
         int numX = Mathf.CeilToInt((boundsEnd.x - boundsStart.x)/sectorSize);
         int numY = Mathf.CeilToInt((boundsEnd.y - boundsStart.y)/sectorSize);
@@ -76,7 +80,7 @@ public class GravityField : MonoBehaviour{
                     GravitySource gravSrc = GetGravitySource(gravitySectors[x,y,z].position);
                     if(gravSrc != null){ // is a gravity source
                         UpdateGravitySectors(gravitySectors[x,y,z], gravSrc.density);
-                        Debug.Log("Gravity Source at: " + gravitySectors[x,y,z].position);
+                        //Debug.Log("Gravity Source at: " + gravitySectors[x,y,z].position);
                     }
                 }
             }
@@ -169,18 +173,20 @@ public class GravityField : MonoBehaviour{
     */
     public Vector3 GetGravity(Vector3 position){
         // get coordinates within gravity field for efficient lookup
-        int coordX = (int)((position.x - boundsStart.x)/sectorSize);
-        int coordY = (int)((position.y - boundsStart.y)/sectorSize);
-        int coordZ = (int)((position.z - boundsStart.z)/sectorSize);
+        int coordX = Mathf.FloorToInt((position.x - boundsStart.x)/sectorSize);
+        int coordY = Mathf.FloorToInt((position.y - boundsStart.y)/sectorSize);
+        int coordZ = Mathf.FloorToInt((position.z - boundsStart.z)/sectorSize);
 
         // check if out of field
-        if(coordX > gravitySectors.GetLength(0) ||
-                coordY > gravitySectors.GetLength(1) ||
-                coordZ > gravitySectors.GetLength(2)){
+        if(coordX >= gravitySectors.GetLength(0) ||
+                coordY >= gravitySectors.GetLength(1) ||
+                coordZ >= gravitySectors.GetLength(2)||
+                coordX < 0 || coordY < 0 || coordZ < 0){
             // gravity vector pulls towards fieldCenter
             // implement later
             return new Vector3();
         }else{
+            // get from nearest sector, (later average of 8)
             return gravitySectors[coordX,coordY,coordZ].GetGravity(gravityType);
         }
     }
