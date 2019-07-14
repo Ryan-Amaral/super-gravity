@@ -20,8 +20,10 @@ public class GravityField : MonoBehaviour{
 
     public string gravityTag = "Gravity"; // the tag for objects that affect gravity
 
-    public float minMagnitude = 0.5f;
-    public float maxMagnitude = 10f;
+    public float minMagnitude = -1f;
+    public float maxMagnitude = -1f;
+
+    public bool viewVectors = false; // view in editor, expensive with many vectors
 
     GravitySector[,,] gravitySectors; // make up the gravity field
 
@@ -93,7 +95,7 @@ public class GravityField : MonoBehaviour{
         for(int x=0; x<gravitySectors.GetLength(0); x++){
             for(int y=0; y<gravitySectors.GetLength(1); y++){
                 for(int z=0; z<gravitySectors.GetLength(2); z++){
-                    gravitySectors[x,y,z].CombineGravityVectors(minMagnitude, maxMagnitude);
+                    gravitySectors[x,y,z].CombineGravityVectors(minMagnitude, maxMagnitude, viewVectors);
                 }
             }
         }

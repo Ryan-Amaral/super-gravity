@@ -24,7 +24,7 @@ public class GravitySector{
     /*
     Combines gravity vectors into one.
     */
-    public void CombineGravityVectors(float minMag, float maxMag){
+    public void CombineGravityVectors(float minMag, float maxMag, bool viewVector){
         gravityVectorSum = Vector3.zero;
 
         foreach(Vector3 vec in gravityVectors){
@@ -36,11 +36,13 @@ public class GravitySector{
         }
         gravityVectorAvg = gravityVectorSum/gravityVectors.Count; // set avg
 
-        //gravityVectorSum = ClampMagnitude(gravityVectorSum, minMag, maxMag);
-        //gravityVectorMax = ClampMagnitude(gravityVectorMax, minMag, maxMag);
-        //gravityVectorAvg = ClampMagnitude(gravityVectorAvg, minMag, maxMag);
+        gravityVectorSum = ClampMagnitude(gravityVectorSum, minMag, maxMag);
+        gravityVectorMax = ClampMagnitude(gravityVectorMax, minMag, maxMag);
+        gravityVectorAvg = ClampMagnitude(gravityVectorAvg, minMag, maxMag);
 
-        //Debug.DrawLine(position, position+gravityVectorSum, Color.red, 1000, false); // debug, delete later
+        if(viewVector){
+            Debug.DrawLine(position, position+gravityVectorSum, Color.red, 1000, false); // debug, delete later
+        }
     }
 
     /*
@@ -62,8 +64,8 @@ public class GravitySector{
     // https://forum.unity.com/threads/clampmagnitude-why-no-minimum.388488/
     Vector3 ClampMagnitude(Vector3 v, float max, float min){
         double sm = v.sqrMagnitude;
-        if(sm > (double)max * (double)max) return v.normalized * max;
-        else if(sm < (double)min * (double)min) return v.normalized * min;
+        if(max > 0 && sm > (double)max * (double)max) return v.normalized * max;
+        else if(min > 0 && sm < (double)min * (double)min) return v.normalized * min;
         return v;
     }
 }
