@@ -560,7 +560,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a1b1dfdef822fa34c8e6539a0c94c54f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  density: 10000
+  density: 1000
 --- !u!64 &1057073515
 MeshCollider:
   m_ObjectHideFlags: 0
