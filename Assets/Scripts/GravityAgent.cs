@@ -19,6 +19,6 @@ public class GravityAgent : MonoBehaviour{
     void FixedUpdate(){
         Vector3 gravityVector = GravityField.instance.GetGravity(transform.position);
         rigidbody.AddForce(gravityVector*rigidbody.mass);
-        //Debug.Log(gravityVector);
+        Debug.Log(gravityVector);
     }
 }
