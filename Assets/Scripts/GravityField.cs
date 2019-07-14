@@ -15,6 +15,7 @@ public class GravityField : MonoBehaviour{
     public Vector3 boundsEnd;
 
     public float sectorSize = 10; // size on each axis of each cube of gravity field
+    float sectorDiagonal;
 
     public GravityType gravityType; // how to aggregate gravity vectors within sector
 
@@ -61,6 +62,8 @@ public class GravityField : MonoBehaviour{
                                   (boundsEnd.z - boundsStart.z)/2);
 
         CreateGravityField();
+
+        sectorDiagonal = Mathf.sqrt(Mathf.Pow(sectorSize,2)*2);
     }
 
     // Update is called once per frame
@@ -279,6 +282,7 @@ public class GravityField : MonoBehaviour{
 
         // combine gravity vectors weighted by distance to position
         Vector3 finalVector = Vector3.zero;
+        int numVecs = gravityVectors.Count;
 
         while(gravityVectors.Count > 0){
             Vector3 closestVec = gravityVectors[0];
@@ -293,7 +297,7 @@ public class GravityField : MonoBehaviour{
             }
 
             // weight higher with smaller distance
-            finalVector += closestVec*(totalDist-(totalDist-closestDist));
+            finalVector += closestVec*((1f/numVecs)*(sectorDiagonal-(sectorDiagonal-closestDist)));
             totalDist = totalDist-closestDist;
 
             gravityVectors.RemoveAt(removeIndex);
