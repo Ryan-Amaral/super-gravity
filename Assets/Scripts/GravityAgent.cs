@@ -4,9 +4,11 @@ using UnityEngine;
 
 public class GravityAgent : MonoBehaviour{
 
+    Rigidbody rigidbody;
+
     // Start is called before the first frame update
     void Start(){
-
+        rigidbody = GetComponent<Rigidbody>();
     }
 
     // Update is called once per frame
@@ -16,7 +18,7 @@ public class GravityAgent : MonoBehaviour{
 
     void FixedUpdate(){
         Vector3 gravityVector = GravityField.instance.GetGravity(transform.position);
-        GetComponent<Rigidbody>().AddForce(gravityVector);
+        rigidbody.AddForce(gravityVector*rigidbody.mass);
         //Debug.Log(gravityVector);
     }
 }

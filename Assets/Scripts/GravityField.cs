@@ -49,9 +49,9 @@ public class GravityField : MonoBehaviour{
                     gravitySectors[x,y,z] = new GravitySector(sectorPosition);
 
                     // debug delete later
-                    GameObject temp = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-                    temp.transform.position = sectorPosition;
-                    temp.GetComponent<Collider>().enabled = false;
+                    //GameObject temp = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                    //temp.transform.position = sectorPosition;
+                    //temp.GetComponent<Collider>().enabled = false;
                 }
             }
         }
@@ -172,23 +172,135 @@ public class GravityField : MonoBehaviour{
     Gets the gravity vector at the reqeusted position.
     */
     public Vector3 GetGravity(Vector3 position){
-        // get coordinates within gravity field for efficient lookup
-        int coordX = Mathf.FloorToInt((position.x - boundsStart.x)/sectorSize);
-        int coordY = Mathf.FloorToInt((position.y - boundsStart.y)/sectorSize);
-        int coordZ = Mathf.FloorToInt((position.z - boundsStart.z)/sectorSize);
+        // get sector coordinates within gravity field
+        float coordX = (position.x - boundsStart.x)/sectorSize;
+        float coordY = (position.y - boundsStart.y)/sectorSize;
+        float coordZ = (position.z - boundsStart.z)/sectorSize;
 
-        // check if out of field
-        if(coordX >= gravitySectors.GetLength(0) ||
-                coordY >= gravitySectors.GetLength(1) ||
-                coordZ >= gravitySectors.GetLength(2)||
-                coordX < 0 || coordY < 0 || coordZ < 0){
-            // gravity vector pulls towards fieldCenter
-            // implement later
-            return new Vector3();
+        // indices for looking up gravity sectors
+        // make idx_1s valid
+        int idxX1 = (int)Mathf.Clamp(coordX, 0, gravitySectors.GetLength(0)-1);
+        int idxX2 = idxX1;
+        int idxY1 = (int)Mathf.Clamp(coordY, 0, gravitySectors.GetLength(1)-1);
+        int idxY2 = idxY1;
+        int idxZ1 = (int)Mathf.Clamp(coordZ, 0, gravitySectors.GetLength(2)-1);
+        int idxZ2 = idxZ1;
+
+        // determine if idx_2s go before or after
+        if(idxX1 == Mathf.Floor(coordX + 0.5f)){
+            idxX2 = idxX1 - 1;
         }else{
-            // get from nearest sector, (later average of 8)
-            return gravitySectors[coordX,coordY,coordZ].GetGravity(gravityType);
+            idxX2 = idxX1 + 1;
         }
+        if(idxY1 == Mathf.Floor(coordY + 0.5f)){
+            idxY2 = idxY1 - 1;
+        }else{
+            idxY2 = idxY1 + 1;
+        }
+        if(idxZ1 == Mathf.Floor(coordZ + 0.5f)){
+            idxZ2 = idxZ1 - 1;
+        }else{
+            idxZ2 = idxZ1 + 1;
+        }
+
+        // store surrounding
+        List<float> distances = new List<float>();
+        List<Vector3> gravityVectors = new List<Vector3>();
+        float totalDist = 0f;
+
+        // get nearest surrounding gravity sectors vectors
+        // first one guaranteed
+        Vector3 vec = gravitySectors[idxX1,idxY1,idxZ1].GetGravity(gravityType);
+        float dist = (position-vec).sqrMagnitude;
+        distances.Add(dist);
+        totalDist += dist;
+        gravityVectors.Add(vec);
+        // 1,1,2
+        if(idxZ2 >= 0 || idxZ2 < gravitySectors.GetLength(2)){
+            vec = gravitySectors[idxX1,idxY1,idxZ2].GetGravity(gravityType);
+            dist = (position-vec).sqrMagnitude;
+            distances.Add(dist);
+            totalDist += dist;
+            gravityVectors.Add(vec);
+        }
+        // 1,2,1
+        if(idxY2 >= 0 || idxY2 < gravitySectors.GetLength(1)){
+            vec = gravitySectors[idxX1,idxY2,idxZ1].GetGravity(gravityType);
+            dist = (position-vec).sqrMagnitude;
+            distances.Add(dist);
+            totalDist += dist;
+            gravityVectors.Add(vec);
+        }
+        // 1,2,2
+        if((idxY2 >= 0 || idxY2 < gravitySectors.GetLength(1)) &&
+                (idxZ2 >= 0 || idxZ2 < gravitySectors.GetLength(2))){
+            vec = gravitySectors[idxX1,idxY2,idxZ2].GetGravity(gravityType);
+            dist = (position-vec).sqrMagnitude;
+            distances.Add(dist);
+            totalDist += dist;
+            gravityVectors.Add(vec);
+        }
+        // 2,1,1
+        if(idxX2 >= 0 || idxX2 < gravitySectors.GetLength(0)){
+            vec = gravitySectors[idxX2,idxY1,idxZ1].GetGravity(gravityType);
+            dist = (position-vec).sqrMagnitude;
+            distances.Add(dist);
+            totalDist += dist;
+            gravityVectors.Add(vec);
+        }
+        // 2,1,2
+        if((idxX2 >= 0 || idxX2 < gravitySectors.GetLength(0)) &&
+                (idxZ2 >= 0 || idxZ2 < gravitySectors.GetLength(2))){
+            vec = gravitySectors[idxX2,idxY1,idxZ2].GetGravity(gravityType);
+            dist = (position-vec).sqrMagnitude;
+            distances.Add(dist);
+            totalDist += dist;
+            gravityVectors.Add(vec);
+        }
+        // 2,2,1
+        if((idxX2 >= 0 || idxX2 < gravitySectors.GetLength(0)) &&
+                (idxY2 >= 0 || idxY2 < gravitySectors.GetLength(1))){
+            vec = gravitySectors[idxX2,idxY2,idxZ1].GetGravity(gravityType);
+            dist = (position-vec).sqrMagnitude;
+            distances.Add(dist);
+            totalDist += dist;
+            gravityVectors.Add(vec);
+        }
+        // 2,2,2
+        if((idxX2 >= 0 || idxX2 < gravitySectors.GetLength(0)) &&
+                (idxY2 >= 0 || idxY2 < gravitySectors.GetLength(1)) &&
+                (idxZ2 >= 0 || idxZ2 < gravitySectors.GetLength(2))){
+            vec = gravitySectors[idxX2,idxY2,idxZ2].GetGravity(gravityType);
+            dist = (position-vec).sqrMagnitude;
+            distances.Add(dist);
+            totalDist += dist;
+            gravityVectors.Add(vec);
+        }
+
+        // combine gravity vectors weighted by distance to position
+        Vector3 finalVector = Vector3.zero;
+
+        while(gravityVectors.Count > 0){
+            Vector3 closestVec = gravityVectors[0];
+            float closestDist = distances[0];
+            int removeIndex = 0;
+            for(int i=1; i < gravityVectors.Count; i++){
+                if(distances[i] < closestDist){
+                    closestDist = distances[i];
+                    closestVec = gravityVectors[i];
+                    removeIndex = i;
+                }
+            }
+
+            // weight higher with smaller distance
+            finalVector += closestVec*(totalDist-(totalDist-closestDist));
+            totalDist = totalDist-closestDist;
+
+            gravityVectors.RemoveAt(removeIndex);
+            distances.RemoveAt(removeIndex);
+        }
+
+        return finalVector;
     }
 
 }
