@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class GroundChecker : MonoBehaviour {
 
-  public bool grounded = false;
+  public bool isGrounded = false;
 
 	// Use this for initialization
 	void Start () {
@@ -17,21 +17,15 @@ public class GroundChecker : MonoBehaviour {
 	}
 
   void OnTriggerEnter(Collider other){
-    if (other.tag != "Player" && other.tag != "Bullet"){
-      grounded = true;
-      if(other.tag == "Platform"){
-        transform.parent.transform.parent = other.transform.parent;
-      }
+    if (other.tag != "Player"){
+      isGrounded = true;
     }
   }
 
   void OnTriggerExit(Collider other){
-    if (other.tag != "Player" && other.tag != "Bullet"){
-      if(other.tag == "Environment" || other.tag == "Platform"){
-        grounded = false;
-      }
-      if(other.tag == "Platform"){
-        transform.parent.transform.parent = null;
+    if (other.tag != "Player"){
+      if(other.tag == "Environment" || other.tag == "Gravity"){
+        isGrounded = false;
       }
     }
   }
