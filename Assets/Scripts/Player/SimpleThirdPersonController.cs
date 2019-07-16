@@ -72,6 +72,7 @@ public class SimpleThirdPersonController : MonoBehaviour
                                      transform.position.y + myForward.y,
                                      transform.position.z + myForward.z),
                          -gravVec);
+        //transform.LookAt(transform.position, -gravVec);
 
         // rotate from player input
         transform.Rotate(transform.up * Input.GetAxis("Mouse X") * rotateSensitivity);

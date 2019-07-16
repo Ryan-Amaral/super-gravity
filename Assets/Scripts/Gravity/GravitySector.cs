@@ -26,19 +26,24 @@ public class GravitySector{
     */
     public void CombineGravityVectors(float minMag, float maxMag, bool viewVector){
         gravityVectorSum = Vector3.zero;
+        float highestMag = 0f;
 
         foreach(Vector3 vec in gravityVectors){
             gravityVectorSum += vec; // add to sum
-            if(vec.sqrMagnitude > maxMag){
-                maxMag = vec.sqrMagnitude; // set max
+            if(vec.sqrMagnitude > highestMag){
+                highestMag = vec.sqrMagnitude; // set max
                 gravityVectorMax = vec;
             }
         }
         gravityVectorAvg = gravityVectorSum/gravityVectors.Count; // set avg
 
+        //Debug.Log("bef: " + gravityVectorSum + " : " + gravityVectorMax + " : " + gravityVectorAvg);
         gravityVectorSum = ClampMagnitude(gravityVectorSum, minMag, maxMag);
         gravityVectorMax = ClampMagnitude(gravityVectorMax, minMag, maxMag);
         gravityVectorAvg = ClampMagnitude(gravityVectorAvg, minMag, maxMag);
+        //Debug.Log("aft: " + gravityVectorSum + " : " + gravityVectorMax + " : " + gravityVectorAvg);
+
+        gravityVectors = null; // clear some space
 
         if(viewVector){
             Debug.DrawLine(position, position+gravityVectorSum, Color.red, 1000, false); // debug, delete later
