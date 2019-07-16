@@ -4,6 +4,8 @@ using UnityEngine;
 
 public class GravityAgent : MonoBehaviour{
 
+    public Vector3 gravityVector;
+
     Rigidbody rigidbody;
 
     // Start is called before the first frame update
@@ -17,8 +19,7 @@ public class GravityAgent : MonoBehaviour{
     }
 
     void FixedUpdate(){
-        Vector3 gravityVector = GravityField.instance.GetGravity(transform.position);
+        gravityVector = GravityField.instance.GetGravity(transform.position);
         rigidbody.AddForce(gravityVector*rigidbody.mass);
-        //Debug.Log(gravityVector);
     }
 }
