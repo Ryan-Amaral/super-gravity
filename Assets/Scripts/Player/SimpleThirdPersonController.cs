@@ -9,6 +9,7 @@ public class SimpleThirdPersonController : MonoBehaviour
     public float jumpPower = 5f;
     public float airMovement = 0.5f; // discount to movement speed when airborn
     public float rotateSensitivity = 0.5f; // player rotation speed
+    public float gravityRotateSpeed = 0.1f; // speed to align to gravity vector
 
     public GroundChecker groundChecker;
     public GravityAgent gravityAgent;
@@ -49,9 +50,7 @@ public class SimpleThirdPersonController : MonoBehaviour
         if(groundChecker.isGrounded){
             // do jump
             if(Input.GetKeyDown(KeyCode.Space)){
-                rigidbody.AddForce((Vector3.up+movement)*jumpPower);
-
-                Debug.Log("JUmp");
+                rigidbody.AddForce((transform.up+movement)*jumpPower);
             }
         }else{
             movement *= airMovement; // discount movement when airborn
@@ -61,20 +60,19 @@ public class SimpleThirdPersonController : MonoBehaviour
     }
 
     /*
-    Rotates the player according to gravity vector, and then user rotation.
+    Aligns the player's down axis with the gravity vector without modifying the
+    player's x rotation, and then modifies the x rotation based on input.
     */
     void Rotate(){
-        // be in line with gravity vector
         Vector3 gravVec = gravityAgent.gravityVector;
-        Vector3 myForward = Quaternion.AngleAxis(90, transform.right) * gravityAgent.gravityVector;;
 
-        transform.LookAt(new Vector3(transform.position.x,
-                                     transform.position.y + myForward.y,
-                                     transform.position.z + myForward.z),
-                         -gravVec);
-        //transform.LookAt(transform.position, -gravVec);
+        float targetRotX = Vector3.SignedAngle(-transform.up, gravVec, transform.right);
+        float targetRotZ = Vector3.SignedAngle(-transform.up, gravVec, transform.forward);
 
-        // rotate from player input
-        transform.Rotate(transform.up * Input.GetAxis("Mouse X") * rotateSensitivity);
+        float rotX = Mathf.SmoothStep(0f, targetRotX, gravityRotateSpeed);
+        float rotY = Input.GetAxis("Mouse X") * rotateSensitivity;
+        float rotZ = Mathf.SmoothStep(0f, targetRotZ, gravityRotateSpeed);
+
+        transform.Rotate(rotX, rotY, rotZ);
     }
 }
