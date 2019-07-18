@@ -77,27 +77,37 @@ public class GravityField : MonoBehaviour{
     Gives gravity vectors to sectors and combines them.
     */
     void CreateGravityField(){
-        // create gravity vectors
+        // find all mass causing sectors, and all others
+        List<GravitySector> sourceSectors = new List<GravitySector>();
+        List<GravitySector> masslessSectors = new List<GravitySector>();
+
         for(int x=0; x<gravitySectors.GetLength(0); x++){
             for(int y=0; y<gravitySectors.GetLength(1); y++){
                 for(int z=0; z<gravitySectors.GetLength(2); z++){
-                    // if sector is in collider, update gravity
                     GravitySource gravSrc = GetGravitySource(gravitySectors[x,y,z].position);
                     if(gravSrc != null){ // is a gravity source
-                        UpdateGravitySectors(gravitySectors[x,y,z], gravSrc.density);
-                        //Debug.Log("Gravity Source at: " + gravitySectors[x,y,z].position);
+                        // update sector with mass from source
+                        gravitySectors[x,y,z].mass = gravSrc.density;
+                        // combine now, as nothing to add
+                        gravitySectors[x,y,z].CombineGravityVectors(
+                                minMagnitude, maxMagnitude, viewVectors);
+                        sourceSectors.Add(gravitySectors[x,y,z]);
+                    }else{
+                        masslessSectors.Add(gravitySectors[x,y,z]);
                     }
                 }
             }
         }
 
-        // combine vectors within each sector
-        for(int x=0; x<gravitySectors.GetLength(0); x++){
-            for(int y=0; y<gravitySectors.GetLength(1); y++){
-                for(int z=0; z<gravitySectors.GetLength(2); z++){
-                    gravitySectors[x,y,z].CombineGravityVectors(minMagnitude, maxMagnitude, viewVectors);
-                }
+        // for each massless sector, update with gravity vectors from all source sectors
+        foreach(GravitySector noMassSect in masslessSectors){
+            foreach(GravitySector srcSect in sourceSectors){
+                noMassSect.gravityVectors.Add(
+                        CreateGravityVector(srcSect.position,
+                                            noMassSect.position,
+                                            srcSect.mass));
             }
+            noMassSect.CombineGravityVectors(minMagnitude, maxMagnitude, viewVectors);
         }
     }
 
@@ -143,31 +153,15 @@ public class GravityField : MonoBehaviour{
     }
 
     /*
-    Updates all gravity sectors with the gravity from the current point.
-    */
-    void UpdateGravitySectors(GravitySector sourceSector, float sourceDensity){
-        for(int x=0; x<gravitySectors.GetLength(0); x++){
-            for(int y=0; y<gravitySectors.GetLength(1); y++){
-                for(int z=0; z<gravitySectors.GetLength(2); z++){
-                    gravitySectors[x,y,z].gravityVectors.Add(
-                            CreateGravityVector(sourceSector.position,
-                                                gravitySectors[x,y,z].position,
-                                                sourceDensity));
-                }
-            }
-        }
-    }
-
-    /*
     Creates a gravity vector of appropriate direction and strength.
     */
-    Vector3 CreateGravityVector(Vector3 source, Vector3 dest, float sourceDensity){
+    Vector3 CreateGravityVector(Vector3 source, Vector3 dest, float sourceMass){
         if(Vector3.Distance(source, dest) == 0){
             return Vector3.zero;
         }else{
             Vector3 dirVect = source - dest; // vector pointing from dest to source
             Vector3 dirVectNorm = dirVect.normalized; // unit length
-            float gravStrength = sourceDensity/dirVect.sqrMagnitude;
+            float gravStrength = sourceMass/dirVect.sqrMagnitude;
 
             return dirVectNorm*gravStrength;
         }

@@ -280,7 +280,7 @@ MonoBehaviour:
   gravityTag: Gravity
   minMagnitude: 5
   maxMagnitude: 5
-  viewVectors: 0
+  viewVectors: 1
 --- !u!4 &655283055
 Transform:
   m_ObjectHideFlags: 0

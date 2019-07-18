@@ -8,6 +8,8 @@ public class GravitySector{
 
     public List<Vector3> gravityVectors;
 
+    public float mass = 0f; // mass is 0 unless sector in gravity source
+
     Vector3 gravityVectorSum;
     Vector3 gravityVectorMax;
     Vector3 gravityVectorAvg;
@@ -26,6 +28,9 @@ public class GravitySector{
     */
     public void CombineGravityVectors(float minMag, float maxMag, bool viewVector){
         gravityVectorSum = Vector3.zero;
+        if(gravityVectors.Count == 0){
+            gravityVectors.Add(Vector3.zero);
+        }
         float highestMag = 0f;
 
         foreach(Vector3 vec in gravityVectors){
@@ -37,11 +42,9 @@ public class GravitySector{
         }
         gravityVectorAvg = gravityVectorSum/gravityVectors.Count; // set avg
 
-        //Debug.Log("bef: " + gravityVectorSum + " : " + gravityVectorMax + " : " + gravityVectorAvg);
         gravityVectorSum = ClampMagnitude(gravityVectorSum, minMag, maxMag);
         gravityVectorMax = ClampMagnitude(gravityVectorMax, minMag, maxMag);
         gravityVectorAvg = ClampMagnitude(gravityVectorAvg, minMag, maxMag);
-        //Debug.Log("aft: " + gravityVectorSum + " : " + gravityVectorMax + " : " + gravityVectorAvg);
 
         gravityVectors = null; // clear some space
 
