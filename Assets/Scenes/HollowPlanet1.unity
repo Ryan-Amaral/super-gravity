@@ -135,12 +135,12 @@ PrefabInstance:
     - target: {fileID: 8974797285789053315, guid: 80bf93a920bcdd8d48929a1f5039c331,
         type: 3}
       propertyPath: m_LocalPosition.x
-      value: -49.3
+      value: -10.6
       objectReference: {fileID: 0}
     - target: {fileID: 8974797285789053315, guid: 80bf93a920bcdd8d48929a1f5039c331,
         type: 3}
       propertyPath: m_LocalPosition.y
-      value: 103.7
+      value: 34.5
       objectReference: {fileID: 0}
     - target: {fileID: 8974797285789053315, guid: 80bf93a920bcdd8d48929a1f5039c331,
         type: 3}
@@ -186,6 +186,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8974797285789053324, guid: 80bf93a920bcdd8d48929a1f5039c331,
+        type: 3}
+      propertyPath: gravityRotateSpeed
+      value: 0.15
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 80bf93a920bcdd8d48929a1f5039c331, type: 3}
@@ -239,7 +244,7 @@ MonoBehaviour:
   gravityTag: Gravity
   minMagnitude: 5
   maxMagnitude: 5
-  viewVectors: 1
+  viewVectors: 0
 --- !u!1 &994028335 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: -927199367670048503, guid: 2e94c763bb5748448963c96c935125b3,

@@ -264,7 +264,7 @@ MonoBehaviour:
   jumpPower: 250
   airMovement: 0.5
   rotateSensitivity: 2
-  gravityRotateSpeed: 0.1
+  gravityRotateSpeed: 0.15
   groundChecker: {fileID: 8974797286524788389}
   gravityAgent: {fileID: 8974797285789053325}
 --- !u!114 &8974797285789053325
