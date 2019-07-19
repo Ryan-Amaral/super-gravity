@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System;
 using UnityEngine;
 
 /*
@@ -169,6 +170,8 @@ public class GravityField : MonoBehaviour{
 
     /*
     Gets the gravity vector at the reqeusted position.
+    Using Inverse Distance Weighting to interpolate between surrounding vectors.
+    https://mgimond.github.io/Spatial/spatial-interpolation.html
     */
     public Vector3 GetGravity(Vector3 position){
         // get sector coordinates within gravity field
@@ -177,11 +180,71 @@ public class GravityField : MonoBehaviour{
         float coordZ = (position.z - boundsStart.z)/sectorSize;
 
         // clamp values to make valid
-        int idxX = (int)Mathf.Clamp(coordX, 0, gravitySectors.GetLength(0)-1);
-        int idxY = (int)Mathf.Clamp(coordY, 0, gravitySectors.GetLength(1)-1);
-        int idxZ = (int)Mathf.Clamp(coordZ, 0, gravitySectors.GetLength(2)-1);
+        int x = (int)Mathf.Clamp(coordX, 0, gravitySectors.GetLength(0)-1);
+        int y = (int)Mathf.Clamp(coordY, 0, gravitySectors.GetLength(1)-1);
+        int z = (int)Mathf.Clamp(coordZ, 0, gravitySectors.GetLength(2)-1);
 
-        return gravitySectors[idxX, idxY, idxZ].GetGravity(gravityType);
+        // build up numerator and denominator of IDW
+        Vector3 idwNum = Vector3.zero;
+        float idwDen = 0f;
+
+        int[,] allIndices = GetSurroundingIndices3D(x,y,z);
+
+        try{
+            // interpolate between all surrounding
+            for(int i = 0; i < allIndices.GetLength(0); i++){
+                int iX = allIndices[i,0];
+                int iY = allIndices[i,1];
+                int iZ = allIndices[i,2];
+                if(iX < 0 || iX >= gravitySectors.GetLength(0) ||
+                        iY < 0 || iY >= gravitySectors.GetLength(1) ||
+                        iZ < 0 || iZ >= gravitySectors.GetLength(2)){
+                    continue; // don't take out of bounds ones
+                }else{
+                    GravitySector gravSect = gravitySectors[iX,iY,iZ];
+                    float dist = (position-gravSect.position).sqrMagnitude;
+                    idwNum += gravSect.GetGravity(gravityType)/dist;
+                    idwDen += 1f/dist;
+                }
+            }
+        }catch(Exception e){
+            Debug.Log(e);
+            // if dist is zero, will cause error, return center vect
+            return gravitySectors[x,y,z].GetGravity(gravityType);
+        }
+
+        return idwNum/idwDen; // return the interpolated ones
+    }
+
+    /*
+    Gets the surrounding cube of indices of the given 3D index.
+    */
+    int[,] GetSurroundingIndices3D(int x, int y, int z, bool includeMiddle=true){
+        int[,] surInds;
+        // different size if including middle
+        if(includeMiddle){
+            surInds = new int[27,3];
+        }else{
+            surInds = new int[26,3];
+        }
+
+        int count = 0;
+
+        for(int iX = x-1; iX < x+2; iX++){
+            for(int iY = y-1; iY < y+2; iY++){
+                for(int iZ = z-1; iZ < z+2; iZ++){
+                    // don't include middle unless we are
+                    if(includeMiddle || !(iX == x && iY == y && iZ == z)){
+                        surInds[count,0] = iX;
+                        surInds[count,1] = iY;
+                        surInds[count,2] = iZ;
+                        count++;
+                    }
+                }
+            }
+        }
+
+        return surInds;
     }
 
 }

@@ -235,7 +235,7 @@ MonoBehaviour:
   boundsStart: {x: -30, y: -30, z: -30}
   boundsEnd: {x: 30, y: 30, z: 30}
   sectorSize: 3
-  gravityType: 0
+  gravityType: 1
   gravityTag: Gravity
   minMagnitude: 5
   maxMagnitude: 5

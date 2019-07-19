@@ -27,20 +27,37 @@ public class GravitySector{
     Combines gravity vectors into one.
     */
     public void CombineGravityVectors(float minMag, float maxMag, bool viewVector){
-        gravityVectorSum = Vector3.zero;
+        // return zero vec if None,
         if(gravityVectors.Count == 0){
-            gravityVectors.Add(Vector3.zero);
+            gravityVectorSum = Vector3.zero;
+            gravityVectorMax = Vector3.zero;
+            gravityVectorAvg = Vector3.zero;
+            return;
         }
+
+
+        gravityVectorSum = Vector3.zero;
         float highestMag = 0f;
+        List<Vector3> maxVecs = new List<Vector3>(); // list to average tied max
 
         foreach(Vector3 vec in gravityVectors){
             gravityVectorSum += vec; // add to sum
             if(vec.sqrMagnitude > highestMag){
+                maxVecs.Clear();
                 highestMag = vec.sqrMagnitude; // set max
-                gravityVectorMax = vec;
+                maxVecs.Add(vec);
+            }else if(vec.sqrMagnitude == highestMag){
+                maxVecs.Add(vec);
             }
         }
         gravityVectorAvg = gravityVectorSum/gravityVectors.Count; // set avg
+
+        // average max
+        gravityVectorMax = Vector3.zero;
+        foreach(Vector3 vec in maxVecs){
+            gravityVectorMax += vec;
+        }
+        gravityVectorMax /= maxVecs.Count;
 
         gravityVectorSum = ClampMagnitude(gravityVectorSum, minMag, maxMag);
         gravityVectorMax = ClampMagnitude(gravityVectorMax, minMag, maxMag);
