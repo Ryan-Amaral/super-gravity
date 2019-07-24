@@ -288,7 +288,7 @@ public class GravityField : MonoBehaviour{
     Using Inverse Distance Weighting to interpolate between surrounding vectors.
     https://mgimond.github.io/Spatial/spatial-interpolation.html
     */
-    public Vector3 GetGravity(Vector3 position){
+    public Vector3 GetGravity(Vector3 position, bool doAverage = true){
         // get sector coordinates within gravity field
         float coordX = (position.x - boundsStart.x)/sectorSize;
         float coordY = (position.y - boundsStart.y)/sectorSize;
@@ -298,6 +298,11 @@ public class GravityField : MonoBehaviour{
         int x = (int)Mathf.Clamp(coordX, 0, gravitySectors.GetLength(0)-1);
         int y = (int)Mathf.Clamp(coordY, 0, gravitySectors.GetLength(1)-1);
         int z = (int)Mathf.Clamp(coordZ, 0, gravitySectors.GetLength(2)-1);
+
+        // just get vector of current sector
+        if(!doAverage){
+            return gravitySectors[x,y,z].GetGravity(gravityType);
+        }
 
         // build up numerator and denominator of IDW
         Vector3 idwNum = Vector3.zero;

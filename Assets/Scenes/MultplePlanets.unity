@@ -368,7 +368,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   boundsStart: {x: -45, y: -35, z: -50}
   boundsEnd: {x: 45, y: 35, z: 50}
-  sectorSize: 5
+  sectorSize: 3
   gravityType: 1
   gravityTag: Gravity
   minMagnitude: 5
@@ -903,6 +903,11 @@ PrefabInstance:
         type: 3}
       propertyPath: speed
       value: 8
+      objectReference: {fileID: 0}
+    - target: {fileID: 8974797285789053324, guid: 80bf93a920bcdd8d48929a1f5039c331,
+        type: 3}
+      propertyPath: rotateSensitivity
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 80bf93a920bcdd8d48929a1f5039c331, type: 3}
