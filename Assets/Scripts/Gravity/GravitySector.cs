@@ -7,6 +7,7 @@ public class GravitySector{
     public Vector3 position; // position in the Game World
 
     public List<Vector3> gravityVectors;
+    public List<Vector3> nearestGravityVectors; // from within distance threshold
 
     public float mass = 0f; // mass is 0 unless sector in gravity source
 
@@ -21,6 +22,7 @@ public class GravitySector{
     public GravitySector(Vector3 position){
         this.position = position;
         gravityVectors = new List<Vector3>();
+        nearestGravityVectors = new List<Vector3>();
     }
 
     /*
@@ -52,6 +54,17 @@ public class GravitySector{
         }
         gravityVectorAvg = gravityVectorSum/gravityVectors.Count; // set avg
 
+        // take into account nearest for max
+        foreach(Vector3 vec in nearestGravityVectors){
+            if(vec.sqrMagnitude > highestMag){
+                maxVecs.Clear();
+                highestMag = vec.sqrMagnitude; // set max
+                maxVecs.Add(vec);
+            }else if(vec.sqrMagnitude == highestMag){
+                maxVecs.Add(vec);
+            }
+        }
+
         // average max
         gravityVectorMax = Vector3.zero;
         foreach(Vector3 vec in maxVecs){
@@ -63,10 +76,12 @@ public class GravitySector{
         gravityVectorMax = ClampMagnitude(gravityVectorMax, minMag, maxMag);
         gravityVectorAvg = ClampMagnitude(gravityVectorAvg, minMag, maxMag);
 
-        gravityVectors = null; // clear some space
+        // clear some space
+        gravityVectors = null;
+        nearestGravityVectors = null;
 
         if(viewVector){
-            Debug.DrawLine(position, position+gravityVectorSum, Color.red, 1000, false); // debug, delete later
+            Debug.DrawLine(position, position+gravityVectorSum, Color.red, 1000, false);
         }
     }
 

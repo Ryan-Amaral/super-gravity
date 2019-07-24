@@ -21,8 +21,23 @@ public class GravityField : MonoBehaviour{
 
     public string gravityTag = "Gravity"; // the tag for objects that affect gravity
 
+    // magnitudes of final vectors to use by player
     public float minMagnitude = -1f;
     public float maxMagnitude = -1f;
+
+    // within this many sector lengths, vector points to nearest contact
+    // instead of other sector, to make gravity point "downward" more reliably
+    public int minSectorDistThreshold = 4;
+
+    // whether to recalculate new max vector on points too close to a source
+    public bool doMaxFix = true;
+
+    // iterations in binary search to find nearest point
+    public int maxFixQuality = 6;
+
+    // increase to get more accurate mass values from sectors
+    // causes n*n*6 rays per sector partially in gravity source
+    public int massCalculationQuality = 0;
 
     public bool viewVectors = false; // view in editor, expensive with many vectors
 
@@ -30,7 +45,12 @@ public class GravityField : MonoBehaviour{
 
     Vector3 fieldCenter; // center of field to draw to if OOB
 
+    Vector3[] minDistProbes;
+
+    float minDistThresh;
+
     public static GravityField instance;
+
 
     /*
     Create the gravity sectors with just positions for now.
@@ -43,6 +63,9 @@ public class GravityField : MonoBehaviour{
         int numY = Mathf.CeilToInt((boundsEnd.y - boundsStart.y)/sectorSize);
         int numZ = Mathf.CeilToInt((boundsEnd.z - boundsStart.z)/sectorSize);
         gravitySectors = new GravitySector[numX,numY,numZ];
+
+        CreateMinDistProbes();
+        minDistThresh = minSectorDistThreshold*sectorSize;
 
         for(int x=0; x<numX; x++){
             for(int y=0; y<numY; y++){
@@ -75,13 +98,41 @@ public class GravityField : MonoBehaviour{
     }
 
     /*
+    Creates vectors used to test for closest point(s) around some point
+    */
+    void CreateMinDistProbes(){
+        int numProbes = (int)(Mathf.Pow((2*minSectorDistThreshold)-1, 3) -
+                              Mathf.Pow((2*(minSectorDistThreshold-1))-1, 3));
+        int probeCounter = 0;
+        minDistProbes = new Vector3[numProbes];
+
+        // iterate through all values in a cube
+        for(int x = -minSectorDistThreshold+1; x < minSectorDistThreshold; x++){
+            for(int y = -minSectorDistThreshold+1; y < minSectorDistThreshold; y++){
+                for(int z = -minSectorDistThreshold+1; z < minSectorDistThreshold; z++){
+                    // only probe to values on outer border of cube
+                    if(x != -minSectorDistThreshold+1 && x != minSectorDistThreshold-1 &&
+                            y != -minSectorDistThreshold+1 && y != minSectorDistThreshold-1 &&
+                            z != -minSectorDistThreshold+1 && z != minSectorDistThreshold-1){
+                        continue;
+                    }
+
+                    minDistProbes[probeCounter] = (new Vector3(x,y,z)).normalized;
+                    Debug.Log(minDistProbes[probeCounter]);
+                    probeCounter += 1;
+                }
+            }
+        }
+    }
+
+    /*
     Gives gravity vectors to sectors and combines them.
     */
     void CreateGravityField(){
-        // find all mass causing sectors, and all others
         List<GravitySector> sourceSectors = new List<GravitySector>();
         List<GravitySector> masslessSectors = new List<GravitySector>();
 
+        // find all source and massless sectors
         for(int x=0; x<gravitySectors.GetLength(0); x++){
             for(int y=0; y<gravitySectors.GetLength(1); y++){
                 for(int z=0; z<gravitySectors.GetLength(2); z++){
@@ -100,14 +151,35 @@ public class GravityField : MonoBehaviour{
             }
         }
 
+        // get actual threshold distance
+        float minDistThreshSqr = Mathf.Pow(minDistThresh, 2);
+        float sourceMass = 0f;
+
         // for each massless sector, update with gravity vectors from all source sectors
         foreach(GravitySector noMassSect in masslessSectors){
+            float closestDistSqr = -1f; // closest source distance to this sector
+            float curDistSqr = -1f;
             foreach(GravitySector srcSect in sourceSectors){
+                // find minimum distance to source sector
+                curDistSqr = (srcSect.position - noMassSect.position).sqrMagnitude;
+                if(curDistSqr < closestDistSqr || closestDistSqr == -1f){
+                    closestDistSqr = curDistSqr;
+                    sourceMass = srcSect.mass;
+                }
+
+                // add gravity vector with pull from source to noMass
                 noMassSect.gravityVectors.Add(
                         CreateGravityVector(srcSect.position,
                                             noMassSect.position,
                                             srcSect.mass));
             }
+            // get new closest point if below threshold
+            if(doMaxFix && closestDistSqr < minDistThreshSqr){
+                // add gravity vectors with pull from nearest source points
+                noMassSect.nearestGravityVectors.AddRange(
+                        GetNewMaxGravityVectors(noMassSect.position, sourceMass));
+            }
+
             noMassSect.CombineGravityVectors(minMagnitude, maxMagnitude, viewVectors);
         }
     }
@@ -168,6 +240,50 @@ public class GravityField : MonoBehaviour{
         }
     }
 
+    List<Vector3> GetNewMaxGravityVectors(Vector3 point, float sourceMass){
+        List<Vector3> maxGravVecs = new List<Vector3>();
+
+        // binary search for closest points
+        float lastHitRadius = minDistThresh;
+        float radius = minDistThresh/2; // start here
+        float radiusChange = radius/2;
+        Collider[] cols;
+        bool hit;
+        for(int i = 0; i < maxFixQuality; i++){
+            hit = false;
+            cols = Physics.OverlapSphere(point, radius);
+            for(int j = 0; j < cols.Length; j++){
+                // hit a source, decrease next radius
+                if(cols[j].tag == gravityTag){
+                    hit = true;
+                    lastHitRadius = radius;
+                    radius -= radiusChange;
+                    break;
+                }
+            }
+
+            // no source hit, increase next radius
+            if(!hit){
+                radius += radiusChange;
+            }
+
+            radiusChange /= 2;
+        }
+
+        // search through probes for hits
+        for(int i = 0; i < minDistProbes.Length; i++){
+            RaycastHit[] hits = Physics.RaycastAll(point, minDistProbes[i], lastHitRadius);
+            for(int j = 0; j < hits.Length; j++){
+                // if gravity
+                if(hits[j].collider.tag == gravityTag){
+                    maxGravVecs.Add(CreateGravityVector(hits[j].point, point, sourceMass));
+                }
+            }
+        }
+
+        return maxGravVecs;
+    }
+
     /*
     Gets the gravity vector at the reqeusted position.
     Using Inverse Distance Weighting to interpolate between surrounding vectors.
@@ -188,6 +304,7 @@ public class GravityField : MonoBehaviour{
         Vector3 idwNum = Vector3.zero;
         float idwDen = 0f;
 
+        // update to take int array as arg
         int[,] allIndices = GetSurroundingIndices3D(x,y,z);
 
         try{
