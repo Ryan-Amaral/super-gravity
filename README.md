@@ -5,7 +5,8 @@ An experiment in Unity to create gravity effects like in Super Mario Galaxy and 
 Once mostly complete I will likely release a tutorial on YouTube, and upload to the Unity Asset Store.
 
 ## TODO
-- Gravity vectors calculated from within a certain threshold distance should use ClosestPoint to a GravitySource Mesh to avoid weird directioning (main cause of jankyness).
+- Make camera or adjustments to gravity vectors more smooth.
+- Use partial mass for sectors not completely in or out of a gravity source.
 - Allow multiple instances of GravityField to have effects like gravity from planets orbiting each other.
 - To allow moving GravityFields as described above, the internal coordinates of GravitySectors must be made relative the the field location.
 

@@ -118,7 +118,6 @@ public class GravityField : MonoBehaviour{
                     }
 
                     minDistProbes[probeCounter] = (new Vector3(x,y,z)).normalized;
-                    Debug.Log(minDistProbes[probeCounter]);
                     probeCounter += 1;
                 }
             }
@@ -319,13 +318,15 @@ public class GravityField : MonoBehaviour{
                     continue; // don't take out of bounds ones
                 }else{
                     GravitySector gravSect = gravitySectors[iX,iY,iZ];
-                    float dist = (position-gravSect.position).sqrMagnitude;
-                    idwNum += gravSect.GetGravity(gravityType)/dist;
-                    idwDen += 1f/dist;
+                    if(gravSect.mass == 0f){
+                        float dist = (position-gravSect.position).sqrMagnitude;
+                        idwNum += gravSect.GetGravity(gravityType)/dist;
+                        idwDen += 1f/dist;
+                    }
                 }
             }
         }catch(Exception e){
-            Debug.Log(e);
+            //Debug.Log(e);
             // if dist is zero, will cause error, return center vect
             return gravitySectors[x,y,z].GetGravity(gravityType);
         }

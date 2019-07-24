@@ -244,6 +244,10 @@ MonoBehaviour:
   gravityTag: Gravity
   minMagnitude: 5
   maxMagnitude: 5
+  minSectorDistThreshold: 4
+  doMaxFix: 1
+  maxFixQuality: 6
+  massCalculationQuality: 0
   viewVectors: 0
 --- !u!1 &994028335 stripped
 GameObject:
