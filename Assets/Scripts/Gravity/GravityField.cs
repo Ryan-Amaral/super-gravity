@@ -167,7 +167,7 @@ public class GravityField : MonoBehaviour{
                 }
 
                 // add gravity vector with pull from source to noMass
-                noMassSect.gravityVectors.Add(
+                noMassSect.AddGravityVector(
                         CreateGravityVector(srcSect.position,
                                             noMassSect.position,
                                             srcSect.mass));
@@ -175,8 +175,11 @@ public class GravityField : MonoBehaviour{
             // get new closest point if below threshold
             if(doMaxFix && closestDistSqr < minDistThreshSqr){
                 // add gravity vectors with pull from nearest source points
-                noMassSect.nearestGravityVectors.AddRange(
-                        GetNewMaxGravityVectors(noMassSect.position, sourceMass));
+                List<Vector3> nearGravVecs = GetNewMaxGravityVectors(
+                        noMassSect.position, sourceMass);
+                for(int j = 0; j < nearGravVecs.Count; j++){
+                    noMassSect.AddGravityVector(nearGravVecs[j], true);
+                }
             }
 
             noMassSect.CombineGravityVectors(minMagnitude, maxMagnitude, viewVectors);

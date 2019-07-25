@@ -6,14 +6,17 @@ public class GravitySector{
 
     public Vector3 position; // position in the Game World
 
-    public List<Vector3> gravityVectors;
-    public List<Vector3> nearestGravityVectors; // from within distance threshold
-
     public float mass = 0f; // mass is 0 unless sector in gravity source
 
+    // types of final vectors
     Vector3 gravityVectorSum;
     Vector3 gravityVectorMax;
     Vector3 gravityVectorAvg;
+
+    // to help build gravity vectors
+    int totalVecs = 0;
+    int totalMaxVecs = 0;
+    float maxSqrMag = 0f;
 
 
     /*
@@ -21,64 +24,46 @@ public class GravitySector{
     */
     public GravitySector(Vector3 position){
         this.position = position;
-        gravityVectors = new List<Vector3>();
-        nearestGravityVectors = new List<Vector3>();
+
+        gravityVectorSum = Vector3.zero;
+        gravityVectorMax = Vector3.zero;
+        gravityVectorAvg = Vector3.zero;
+    }
+
+    /*
+    Adds the vector to the aggregate vectors, except for avg which is done after.
+    */
+    public void AddGravityVector(Vector3 gravVec, bool maxOnly=false){
+        if(!maxOnly){
+            gravityVectorSum += gravVec;
+            totalVecs++;
+        }
+
+        float curSqrMag = gravVec.sqrMagnitude;
+        if(!Mathf.Approximately(curSqrMag, maxSqrMag) && curSqrMag > maxSqrMag){
+            gravityVectorMax = gravVec;
+            totalMaxVecs = 1;
+            maxSqrMag = curSqrMag;
+        }else if(Mathf.Approximately(curSqrMag, maxSqrMag)){
+            gravityVectorMax += gravVec;
+            totalMaxVecs += 1;
+        }
     }
 
     /*
     Combines gravity vectors into one.
     */
     public void CombineGravityVectors(float minMag, float maxMag, bool viewVector){
-        // return zero vec if None,
-        if(gravityVectors.Count == 0){
-            gravityVectorSum = Vector3.zero;
-            gravityVectorMax = Vector3.zero;
-            gravityVectorAvg = Vector3.zero;
-            return;
+        // sum is already taken care of, create max and avg
+        if(totalVecs > 0 && totalMaxVecs > 0){
+            gravityVectorMax /= totalMaxVecs;
+            gravityVectorAvg = gravityVectorSum / totalVecs;
         }
 
-
-        gravityVectorSum = Vector3.zero;
-        float highestMag = 0f;
-        List<Vector3> maxVecs = new List<Vector3>(); // list to average tied max
-
-        foreach(Vector3 vec in gravityVectors){
-            gravityVectorSum += vec; // add to sum
-            if(vec.sqrMagnitude > highestMag){
-                maxVecs.Clear();
-                highestMag = vec.sqrMagnitude; // set max
-                maxVecs.Add(vec);
-            }else if(vec.sqrMagnitude == highestMag){
-                maxVecs.Add(vec);
-            }
-        }
-        gravityVectorAvg = gravityVectorSum/gravityVectors.Count; // set avg
-
-        // take into account nearest for max
-        foreach(Vector3 vec in nearestGravityVectors){
-            if(vec.sqrMagnitude > highestMag){
-                maxVecs.Clear();
-                highestMag = vec.sqrMagnitude; // set max
-                maxVecs.Add(vec);
-            }else if(vec.sqrMagnitude == highestMag){
-                maxVecs.Add(vec);
-            }
-        }
-
-        // average max
-        gravityVectorMax = Vector3.zero;
-        foreach(Vector3 vec in maxVecs){
-            gravityVectorMax += vec;
-        }
-        gravityVectorMax /= maxVecs.Count;
-
+        // clamp values if applicable
         gravityVectorSum = ClampMagnitude(gravityVectorSum, minMag, maxMag);
         gravityVectorMax = ClampMagnitude(gravityVectorMax, minMag, maxMag);
         gravityVectorAvg = ClampMagnitude(gravityVectorAvg, minMag, maxMag);
-
-        // clear some space
-        gravityVectors = null;
-        nearestGravityVectors = null;
 
         if(viewVector){
             Debug.DrawLine(position, position+gravityVectorSum, Color.red, 1000, false);
