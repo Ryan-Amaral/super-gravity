@@ -17,7 +17,5 @@ Once mostly complete I will likely release a tutorial on YouTube, and upload to 
 ## More Info To Come Later
 
 ## Visuals
-![The player walking around a cube.](https://github.com/Ryan-Amaral/super-gravity/blob/master/media/clip1.gif)
-![The player orbiting around a cube.](https://github.com/Ryan-Amaral/super-gravity/blob/master/media/clip2.gif)
 ![The player moving around some planets.](https://github.com/Ryan-Amaral/super-gravity/blob/master/media/clip3.gif)
 ![The player coming walking out of a hollow planet.](https://github.com/Ryan-Amaral/super-gravity/blob/master/media/clip4.gif)
