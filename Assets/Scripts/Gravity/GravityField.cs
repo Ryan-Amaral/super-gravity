@@ -49,6 +49,9 @@ public class GravityField : MonoBehaviour{
 
     float minDistThresh;
 
+    float sectorDiagDist1; // diagonal off an edge
+    float sectorDiagDist2; // diagonal off a vertex
+
     public static GravityField instance;
 
 
@@ -66,6 +69,11 @@ public class GravityField : MonoBehaviour{
 
         CreateMinDistProbes();
         minDistThresh = minSectorDistThreshold*sectorSize;
+
+        sectorDiagDist1 = Vector3.Distance(Vector3.zero,
+                            new Vector3(0f, sectorSize, sectorSize));
+        sectorDiagDist2 = Vector3.Distance(Vector3.zero,
+                            new Vector3(sectorSize, sectorSize, sectorSize));
 
         for(int x=0; x<numX; x++){
             for(int y=0; y<numY; y++){
@@ -289,7 +297,6 @@ public class GravityField : MonoBehaviour{
     /*
     Gets the gravity vector at the reqeusted position.
     Using Inverse Distance Weighting to interpolate between surrounding vectors.
-    https://mgimond.github.io/Spatial/spatial-interpolation.html
     */
     public Vector3 GetGravity(Vector3 position, bool doAverage = true){
         // get sector coordinates within gravity field
@@ -307,70 +314,113 @@ public class GravityField : MonoBehaviour{
             return gravitySectors[x,y,z].GetGravity(gravityType);
         }
 
-        // build up numerator and denominator of IDW
-        Vector3 idwNum = Vector3.zero;
-        float idwDen = 0f;
-
-        // update to take int array as arg
-        int[,] allIndices = GetSurroundingIndices3D(x,y,z);
-
-        try{
-            // interpolate between all surrounding
-            for(int i = 0; i < allIndices.GetLength(0); i++){
-                int iX = allIndices[i,0];
-                int iY = allIndices[i,1];
-                int iZ = allIndices[i,2];
-                if(iX < 0 || iX >= gravitySectors.GetLength(0) ||
-                        iY < 0 || iY >= gravitySectors.GetLength(1) ||
-                        iZ < 0 || iZ >= gravitySectors.GetLength(2)){
-                    continue; // don't take out of bounds ones
-                }else{
-                    GravitySector gravSect = gravitySectors[iX,iY,iZ];
-                    if(gravSect.mass == 0f){
-                        float dist = (position-gravSect.position).sqrMagnitude;
-                        idwNum += gravSect.GetGravity(gravityType)/dist;
-                        idwDen += 1f/dist;
-                    }
-                }
-            }
-        }catch(Exception e){
-            //Debug.Log(e);
-            // if dist is zero, will cause error, return center vect
-            return gravitySectors[x,y,z].GetGravity(gravityType);
+        // get adjacent indices, whichever is closest to, 0 if not valid
+        int xOther = Mathf.RoundToInt(coordX);
+        int yOther = Mathf.RoundToInt(coordY);
+        int zOther = Mathf.RoundToInt(coordZ);
+        // fix coordinates
+        if(xOther == x){
+            xOther = x - 1;
+        }
+        if(xOther < 0 || xOther > gravitySectors.GetLength(0)-1){
+            xOther = x;
         }
 
-        return idwNum/idwDen; // return the interpolated ones
-    }
-
-    /*
-    Gets the surrounding cube of indices of the given 3D index.
-    */
-    int[,] GetSurroundingIndices3D(int x, int y, int z, bool includeMiddle=true){
-        int[,] surInds;
-        // different size if including middle
-        if(includeMiddle){
-            surInds = new int[27,3];
-        }else{
-            surInds = new int[26,3];
+        if(yOther == y){
+            yOther = y - 1;
+        }
+        if(yOther < 0 || yOther > gravitySectors.GetLength(1)-1){
+            yOther = y;
         }
 
+        if(zOther == z){
+            zOther = z - 1;
+        }
+        if(zOther < 0 || zOther > gravitySectors.GetLength(2)-1){
+            zOther = z;
+        }
+
+        float relDistToCenter;
+        Vector3 gravVec = Vector3.zero;
         int count = 0;
-
-        for(int iX = x-1; iX < x+2; iX++){
-            for(int iY = y-1; iY < y+2; iY++){
-                for(int iZ = z-1; iZ < z+2; iZ++){
-                    // don't include middle unless we are
-                    if(includeMiddle || !(iX == x && iY == y && iZ == z)){
-                        surInds[count,0] = iX;
-                        surInds[count,1] = iY;
-                        surInds[count,2] = iZ;
-                        count++;
-                    }
-                }
-            }
+        // along x
+        if(xOther != x){
+            relDistToCenter = (position.x - gravitySectors[x,y,z].position.x) / sectorSize;
+            gravVec += ((1f-relDistToCenter)*gravitySectors[x,y,z].GetGravity(gravityType))
+                        + (relDistToCenter*gravitySectors[xOther,y,z].GetGravity(gravityType));
+            count += 1;
+        }else{
+            gravVec += gravitySectors[x,y,z].GetGravity(gravityType);
+        }
+        // along y
+        if(yOther != y){
+            relDistToCenter = (position.y - gravitySectors[x,y,z].position.y) / sectorSize;
+            gravVec += ((1f-relDistToCenter)*gravitySectors[x,y,z].GetGravity(gravityType))
+                        + (relDistToCenter*gravitySectors[x,yOther,z].GetGravity(gravityType));
+            count += 1;
+        }else{
+            gravVec += gravitySectors[x,y,z].GetGravity(gravityType);
+        }
+        // along z
+        if(zOther != z){
+            relDistToCenter = (position.z - gravitySectors[x,y,z].position.z) / sectorSize;
+            gravVec += ((1f-relDistToCenter)*gravitySectors[x,y,z].GetGravity(gravityType))
+                        + (relDistToCenter*gravitySectors[x,y,zOther].GetGravity(gravityType));
+            count += 1;
+        }else{
+            gravVec += gravitySectors[x,y,z].GetGravity(gravityType);
+        }
+        // along xy
+        if(xOther != x && yOther != y){
+            relDistToCenter = Vector2.Distance(
+                    new Vector2(position.x, position.y),
+                    new Vector2(gravitySectors[x,y,z].position.x,
+                                gravitySectors[x,y,z].position.y))
+                    / sectorDiagDist1;
+            gravVec += ((1f-relDistToCenter)*gravitySectors[x,y,z].GetGravity(gravityType))
+                        + (relDistToCenter*gravitySectors[xOther,yOther,z].GetGravity(gravityType));
+            count += 1;
+        }else{
+            gravVec += gravitySectors[x,y,z].GetGravity(gravityType);
+        }
+        // along xz
+        if(xOther != x && zOther != z){
+            relDistToCenter = Vector2.Distance(
+                    new Vector2(position.x, position.z),
+                    new Vector2(gravitySectors[x,y,z].position.x,
+                                gravitySectors[x,y,z].position.z))
+                    / sectorDiagDist1;
+            gravVec += ((1f-relDistToCenter)*gravitySectors[x,y,z].GetGravity(gravityType))
+                        + (relDistToCenter*gravitySectors[xOther,y,zOther].GetGravity(gravityType));
+            count += 1;
+        }else{
+            gravVec += gravitySectors[x,y,z].GetGravity(gravityType);
+        }
+        // along yz
+        if(zOther != z && yOther != y){
+            relDistToCenter = Vector2.Distance(
+                    new Vector2(position.z, position.y),
+                    new Vector2(gravitySectors[x,y,z].position.z,
+                                gravitySectors[x,y,z].position.y))
+                    / sectorDiagDist1;
+            gravVec += ((1f-relDistToCenter)*gravitySectors[x,y,z].GetGravity(gravityType))
+                        + (relDistToCenter*gravitySectors[x,yOther,zOther].GetGravity(gravityType));
+            count += 1;
+        }else{
+            gravVec += gravitySectors[x,y,z].GetGravity(gravityType);
+        }
+        // along xyz
+        if(xOther != x && yOther != y && zOther != z){
+            relDistToCenter = Vector3.Distance(position,
+                    gravitySectors[x,y,z].position)
+                / sectorDiagDist2;
+            gravVec += ((1f-relDistToCenter)*gravitySectors[x,y,z].GetGravity(gravityType))
+                        + (relDistToCenter*gravitySectors[xOther,yOther,zOther].GetGravity(gravityType));
+            count += 1;
+        }else{
+            gravVec += gravitySectors[x,y,z].GetGravity(gravityType);
         }
 
-        return surInds;
+        return gravVec / 7f;
     }
-
 }
