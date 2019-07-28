@@ -15,6 +15,7 @@ public class SimpleThirdPersonController : MonoBehaviour
     public GravityAgent gravityAgent;
 
     Rigidbody rigidbody;
+    Vector3 gravVec;
 
     // Start is called before the first frame update
     void Start(){
@@ -64,7 +65,7 @@ public class SimpleThirdPersonController : MonoBehaviour
     player's x rotation, and then modifies the x rotation based on input.
     */
     void Rotate(){
-        Vector3 gravVec = gravityAgent.gravityVector;
+        gravVec = gravityAgent.gravityVector;
 
         float targetRotX = Vector3.SignedAngle(-transform.up, gravVec, transform.right);
         float targetRotZ = Vector3.SignedAngle(-transform.up, gravVec, transform.forward);

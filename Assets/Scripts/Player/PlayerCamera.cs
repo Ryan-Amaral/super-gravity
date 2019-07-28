@@ -21,36 +21,36 @@ public class PlayerCamera : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
-    theta = 2*Mathf.PI; // initial rotation value
+        theta = 2*Mathf.PI; // initial rotation value
 
-    // put camera behind anchor (at distance)
-    transform.rotation = anchor.rotation;
-    transform.position = anchor.position;
-    transform.Translate(0,0,-scaleZ*theta*Mathf.Cos(theta));
+        // put camera behind anchor (at distance)
+        transform.rotation = anchor.rotation;
+        transform.position = anchor.position;
+        transform.Translate(0,0,-scaleZ*theta*Mathf.Cos(theta));
 	}
 
 	// Update is called once per frame
 	void Update () {
-    // update position on path based on mouse movement
-    float dTheta = -Input.GetAxis("Mouse Y")*sensitivity;
-    theta += dTheta;
+        // update position on path based on mouse movement
+        float dTheta = -Input.GetAxis("Mouse Y")*sensitivity;
+        theta += dTheta;
 
-    // limit rotation
-    if(theta > (2*Mathf.PI) + (maxUp*(Mathf.PI/2))){
-      theta = (2*Mathf.PI) + (maxUp*(Mathf.PI/2));
-    }else if(theta < (2*Mathf.PI) - (maxDown*(Mathf.PI/2))){
-      theta = (2*Mathf.PI) - (maxDown*(Mathf.PI/2));
+        // limit rotation
+        if(theta > (2*Mathf.PI) + (maxUp*(Mathf.PI/2))){
+          theta = (2*Mathf.PI) + (maxUp*(Mathf.PI/2));
+        }else if(theta < (2*Mathf.PI) - (maxDown*(Mathf.PI/2))){
+          theta = (2*Mathf.PI) - (maxDown*(Mathf.PI/2));
+        }
+
+        float y = scaleY*theta*Mathf.Sin(theta);
+        float z = -scaleZ*theta*Mathf.Cos(theta);
+
+        // set new position
+        transform.rotation = anchor.rotation;
+        transform.position = anchor.position;
+        transform.Translate(0,Mathf.Max(y, -2.5f),z);
+
+        // always look at anchor
+        transform.LookAt(anchor, anchor.up);
     }
-
-    float y = scaleY*theta*Mathf.Sin(theta);
-    float z = -scaleZ*theta*Mathf.Cos(theta);
-
-    // set new position
-    transform.rotation = anchor.rotation;
-    transform.position = anchor.position;
-    transform.Translate(0,Mathf.Max(y, -2.5f),z);
-
-    // always look at anchor
-    transform.LookAt(anchor, anchor.up);
-	}
 }
