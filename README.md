@@ -1,5 +1,5 @@
 # super-gravity
-An experiment in Unity to create gravity effects like in Super Mario Galaxy and the real world. Performs efficiently by baking a gravity vector field in the world at the start of the level.
+An experiment in Unity to create gravity effects like in Super Mario Galaxy and the real world. Performs efficiently by baking a gravity vector field in the world at the start of the level. Efficient as in time efficient (after baking), not very space efficient unfortunately.
 
 ## [Online Demo](https://ryan-amaral.github.io/super-gravity/)
 
